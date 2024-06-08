@@ -1,6 +1,3 @@
-import requests
-import json
-
 # Python program to get the real-time currency exchange rate - courtesy of GeeksForGeeks(https://www.geeksforgeeks.org/python-get-the-real-time-currency-exchange-rate/)
 
 # Function to get real time currency exchange 
@@ -10,10 +7,11 @@ def RealTimeCurrencyExchangeRate(from_currency, to_currency, api_key) :
 	import requests, json 
 
 	# base_url variable store base url 
-	base_url = r"https://www.alphavantage.co/query?function = CURRENCY_EXCHANGE_RATE"
+	base_url = r"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE"
 
 	# main_url variable store complete url 
-	main_url = base_url + "&from_currency =" + from_currency + "&to_currency =" + to_currency + "&apikey =" + api_key 
+	main_url = base_url + "&from_currency=" + from_currency + "&to_currency=" + to_currency + "&apikey=" + api_key
+ #final_url = alpha_url + "&from_currency=" + from_currency + "&to_currency=" + to_currency + "&apikey=" + api_key 
 
 	# get method of requests module 
 	# return response object 
@@ -43,7 +41,7 @@ if __name__ == "__main__" :
 
 	# currency code 
 	from_currency = "USD"
-	to_currency = "INR"
+	to_currency = "RON"
 
 	# enter your api key here 
 	api_key = "S4YPHBHFYXU8U6V3"
