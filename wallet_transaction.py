@@ -23,3 +23,6 @@ def send_payment(wallet, client, destination_address, amount):
     payment_tx = create_payment_transaction(wallet, destination_address, amount)
     response = send_reliable_submission(payment_tx, client)
     return response
+
+def wallet():
+    return wallet

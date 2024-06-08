@@ -1,8 +1,7 @@
 from flexmeasures import Sensor, add_reading
 import datetime
 import numpy as np
-import threading
-from ripplenet import *
+from ripplenet import send_payment
 
 # Define sensors for renewable energy sources
 solar_sensor = Sensor(name="solar_panel", unit="kWh", type="electricity", location="solar_farm")
@@ -47,7 +46,7 @@ battery_level = 1000  # Initial battery level in kWh
 battery_capacity = 2000  # Maximum battery capacity in kWh
 battery_threshold = 1800  # Threshold to signal consumers
 
-def manage_battery(solar_reading, wind_reading, consumer_readings):
+def manage_battery(consumer_readings):
     global battery_level, consumers_reducing, current_reduction_hours
     net_energy = total_generation - total_consumption
     
@@ -75,7 +74,7 @@ def manage_battery(solar_reading, wind_reading, consumer_readings):
 solar_reading = collect_data(solar_sensor)
 wind_reading = collect_data(wind_sensor)
 consumer_readings = [collect_data(sensor) for sensor in consumer_sensors]
-battery_reading = manage_battery(solar_reading, wind_reading, consumer_readings)
+battery_reading = manage_battery(consumer_readings)
 total_generation = solar_reading['value'] + wind_reading['value']
 total_consumption = sum([reading['value'] for reading in consumer_readings])
 
@@ -105,15 +104,10 @@ def log_readings(solar_reading, wind_reading, consumer_readings, battery_reading
     print(f"Battery Level: {battery_reading:.2f} kWh\n")
     
 def check_grid_usage():
-    curr_usage_percent = lambda 
-    if():
-    elif():
+    curr_capacity_left_per = lambda total_generation, total_consumption: total_consumption / total_generation
+    if(curr_capacity_left_per > 1): 
+        a = 1
+    elif(curr_capacity_left_per < 0.2):
+        b = 2
     else:
-
-if __name__ == "__main__":
-    t1 = threading.Thread(target=check_grid_usage)
-    t1.start
-    # Run the simulation
-    for _ in range(24):  # Simulate for 24 hours
-        balance_load()
-    t1.join()
+        c = 4

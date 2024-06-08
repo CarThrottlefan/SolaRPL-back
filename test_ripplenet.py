@@ -4,7 +4,7 @@ from xrpl.clients import JsonRpcClient
 from xrpl.models.requests import AccountInfo
 import time
 from xrpl.models.transactions import Payment
-from xrpl.transaction import submit_and_wait, submit_transaction
+from xrpl.transaction import submit_and_wait, submit
 
 #completely unrelated to other scripts, therefore double functions
 def generate_wallet():
@@ -45,7 +45,7 @@ def create_payment_transaction(wallet, destination_address, amount):
 def send_payment(wallet, client, destination_address, amount):
     payment_tx = create_payment_transaction(wallet, destination_address, amount)
     signed_tx = submit_and_wait(payment_tx, client, wallet)
-    response = submit_transaction(signed_tx, client)
+    response = submit(signed_tx, client)
     return response
 
 def main():
