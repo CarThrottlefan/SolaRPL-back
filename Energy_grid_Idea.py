@@ -1,6 +1,8 @@
 from flexmeasures import Sensor, add_reading
 import datetime
 import numpy as np
+import threading
+from ripplenet import *
 
 # Define sensors for renewable energy sources
 solar_sensor = Sensor(name="solar_panel", unit="kWh", type="electricity", location="solar_farm")
@@ -40,14 +42,13 @@ def collect_data(sensor):
     add_reading(reading)  # Assuming add_reading function exists in flexmeasures
     return reading
 
+
 battery_level = 1000  # Initial battery level in kWh
 battery_capacity = 2000  # Maximum battery capacity in kWh
 battery_threshold = 1800  # Threshold to signal consumers
 
 def manage_battery(solar_reading, wind_reading, consumer_readings):
     global battery_level, consumers_reducing, current_reduction_hours
-    total_generation = solar_reading['value'] + wind_reading['value']
-    total_consumption = sum([reading['value'] for reading in consumer_readings])
     net_energy = total_generation - total_consumption
     
     if net_energy > 0:
@@ -71,6 +72,13 @@ def manage_battery(solar_reading, wind_reading, consumer_readings):
 
     return battery_level
 
+solar_reading = collect_data(solar_sensor)
+wind_reading = collect_data(wind_sensor)
+consumer_readings = [collect_data(sensor) for sensor in consumer_sensors]
+battery_reading = manage_battery(solar_reading, wind_reading, consumer_readings)
+total_generation = solar_reading['value'] + wind_reading['value']
+total_consumption = sum([reading['value'] for reading in consumer_readings])
+
 def signal_consumers_to_reduce():
     global consumers_reducing, initial_consumption
     consumers_reducing = True
@@ -83,15 +91,10 @@ def check_and_reward_consumers(consumer_readings):
         initial_value = initial_consumption[reading['sensor'].name]
         if reading['value'] < initial_value * 0.75:  # Check if consumption reduced by at least 25%
             # Trigger payment to consumer's wallet
-            send_payment(wallet, client, "destination_xrp_address_for_consumer", 10)  # Adjust amount and address accordingly
+            send_payment(10)  # Adjust amount and address accordingly
             print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
 
 def balance_load():
-    solar_reading = collect_data(solar_sensor)
-    wind_reading = collect_data(wind_sensor)
-    consumer_readings = [collect_data(sensor) for sensor in consumer_sensors]
-    battery_reading = manage_battery(solar_reading, wind_reading, consumer_readings)
-    
     # Log the readings for analysis
     log_readings(solar_reading, wind_reading, consumer_readings, battery_reading)
 
@@ -100,7 +103,17 @@ def log_readings(solar_reading, wind_reading, consumer_readings, battery_reading
     for i, reading in enumerate(consumer_readings):
         print(f"Consumer {i+1}: {reading['value']:.2f} kWh")
     print(f"Battery Level: {battery_reading:.2f} kWh\n")
+    
+def check_grid_usage():
+    curr_usage_percent = lambda 
+    if():
+    elif():
+    else:
 
-# Run the simulation
-for _ in range(24):  # Simulate for 24 hours
-    balance_load()
+if __name__ == "__main__":
+    t1 = threading.Thread(target=check_grid_usage)
+    t1.start
+    # Run the simulation
+    for _ in range(24):  # Simulate for 24 hours
+        balance_load()
+    t1.join()
