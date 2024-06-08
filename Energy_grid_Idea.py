@@ -15,6 +15,7 @@ consumer_sensors = [Sensor(name=f"consumer_meter_{i}", unit="kWh", type="electri
 
 # Global variable to track whether consumers have been signaled to reduce consumption
 consumers_reducing = False
+consumers_increasing = False
 reduction_period = 3  # Number of hours consumers reduce their consumption
 current_reduction_hours = 0
 
@@ -85,6 +86,13 @@ def signal_consumers_to_reduce():
     for sensor in consumer_sensors:
         initial_consumption[sensor.name] = collect_data(sensor)['value']
 
+def signal_consumers_to_increase():
+    global consumers_increasing, initial_consumption
+    consumers_increasing = True
+    print(". Consumers are advised to reduce their power consumption to maintain grid stability.")
+    for sensor in consumer_sensors:
+        initial_consumption[sensor.name] = collect_data(sensor)['value']
+
 def check_and_reward_consumers(consumer_readings):
     for reading in consumer_readings:
         initial_value = initial_consumption[reading['sensor'].name]
@@ -106,7 +114,7 @@ def log_readings(solar_reading, wind_reading, consumer_readings, battery_reading
 def check_grid_usage():
     curr_capacity_left_per = lambda total_generation, total_consumption: total_consumption / total_generation
     if(curr_capacity_left_per > 1): 
-        a = 1
+        
     elif(curr_capacity_left_per < 0.2):
         b = 2
     else:

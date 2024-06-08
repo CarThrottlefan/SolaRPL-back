@@ -45,7 +45,7 @@ def create_payment_transaction(wallet, destination_address, amount):
 def send_payment(wallet, client, destination_address, amount):
     payment_tx = create_payment_transaction(wallet, destination_address, amount)
     signed_tx = submit_and_wait(payment_tx, client, wallet)
-    response = submit(signed_tx, client)
+    response = submit(signed_tx)
     return response
 
 def main():
