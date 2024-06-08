@@ -3,6 +3,7 @@ import numpy as np
 from timely_beliefs import TimedBelief
 from datetime import timedelta
 import pytz
+import matplotlib.pyplot as plt 
 
 # In-memory data storage
 class InMemoryDB:
@@ -85,13 +86,13 @@ def add_reading(sensor, value, timestamp):
         event_value=value,
         sensor=sensor,
         source=custom_source.name,
+        belief_horizon=timedelta(hours=0)
     )
     
     db.beliefs.append(belief)
 
 # Function to collect data from sensors
-def collect_data(sensor):
-    now = datetime.datetime.now(pytz.UTC)
+def collect_data(sensor, now):
     if "solar_panel" in sensor.name:
         value = max(0, np.sin(now.hour / 24.0 * 2 * np.pi) * 100)
     elif "wind_turbine" in sensor.name:
@@ -103,11 +104,58 @@ def collect_data(sensor):
     add_reading(sensor, value, now)
     return {"sensor": sensor, "datetime": now, "value": value}
 
-# Simulate data collection
-for sensor in [solar_sensor, wind_sensor, grid_sensor, battery_sensor] + consumer_sensors:
-    print(collect_data(sensor))
-
+start_time = datetime.datetime.now(pytz.UTC)
+for hour in range(24):
+    current_time = start_time + timedelta(hours=hour)
+    for sensor in [solar_sensor, wind_sensor, grid_sensor, battery_sensor] + consumer_sensors:
+        collect_data(sensor, current_time)
 # Print data from the in-memory database
+        
+def extract_data(sensor_name):
+    timestamps = []
+    values = []
+    for belief in db.beliefs:
+        if belief.sensor.name == sensor_name:
+            timestamps.append(belief.event_start)
+            values.append(belief.event_value)
+    return timestamps, values
+
+def plot_sensor_data():
+    plt.figure(figsize=(12, 8))
+
+    # Plot Solar Panel Data
+    timestamps, values = extract_data("solar_panel_sensor")
+    plt.plot(timestamps, values, label="Solar Panel", color="orange")
+
+    # Plot Wind Turbine Data
+    timestamps, values = extract_data("wind_turbine_sensor")
+    plt.plot(timestamps, values, label="Wind Turbine", color="blue")
+
+    # Plot Grid Data
+    timestamps, values = extract_data("grid_sensor")
+    plt.plot(timestamps, values, label="Grid", color="green")
+
+    # Plot Battery Storage Data
+    timestamps, values = extract_data("battery_storage_sensor")
+    plt.plot(timestamps, values, label="Battery Storage", color="red")
+
+    # Plot Consumer Data
+    for i in range(5):
+        timestamps, values = extract_data(f"consumer_meter_{i}")
+        plt.plot(timestamps, values, label=f"Consumer {i}", linestyle='--')
+
+    plt.xlabel("Time")
+    plt.ylabel("kWh")
+    plt.title("Energy Fluctuations Over 24 Hours")
+    plt.legend()
+    plt.grid(True)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+plot_sensor_data()
+
+        
 def print_data():
     print("\nGeneric Asset Types:")
     for asset_type in db.generic_asset_types:
