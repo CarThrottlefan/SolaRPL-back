@@ -18,6 +18,7 @@ consumers_reducing = False
 consumers_increasing = False
 reduction_period = 3  # Number of hours consumers reduce their consumption
 current_reduction_hours = 0
+max_token_reward = 30
 
 # Track initial consumption to compare later
 initial_consumption = {sensor.name: 0 for sensor in consumer_sensors}
@@ -93,13 +94,29 @@ def signal_consumers_to_increase():
     for sensor in consumer_sensors:
         initial_consumption[sensor.name] = collect_data(sensor)['value']
 
-def check_and_reward_consumers(consumer_readings):
+def check_and_reward_consumers(consumer_readings, actionName):
     for reading in consumer_readings:
         initial_value = initial_consumption[reading['sensor'].name]
-        if reading['value'] < initial_value * 0.75:  # Check if consumption reduced by at least 25%
+        if actionName == "reduced":
+            if initial_value * 0.8 <= reading['value'] < initial_value:  # Check if consumption reduced by max 20%
             # Trigger payment to consumer's wallet
-            send_payment(10)  # Adjust amount and address accordingly
-            print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
+                send_payment(10)  # Adjust amount and address accordingly
+                print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
+            elif initial_value * 0.1 <= reading['value'] < initial_value * 0.8:
+                reduct_per = reading['value']/initial_value 
+                send_payment(1 / reduct_per * max_token_reward)  # Adjust amount and address accordingly
+                print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
+        elif actionName == "increased":
+            if initial_value * 1.5 <= reading['value'] < initial_value * 1.8:  # Check if consumption increased by 50-79%
+            # Trigger payment to consumer's wallet
+                reduct_per = reading['value']/initial_value 
+                send_payment(reduct_per * max_token_reward)  # Adjust amount and address accordingly
+                print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
+            elif initial_value * 1.8 <= reading['value']: # Check if consumption increased by 80%+
+                send_payment(10)  # Adjust amount and address accordingly
+                print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
+        
+        
 
 def balance_load():
     # Log the readings for analysis
@@ -114,8 +131,9 @@ def log_readings(solar_reading, wind_reading, consumer_readings, battery_reading
 def check_grid_usage():
     curr_capacity_left_per = lambda total_generation, total_consumption: total_consumption / total_generation
     if(curr_capacity_left_per > 1): 
-        
+        signal_consumers_to_increase()
+        check_and_reward_consumers(consumer_readings, "increased")
     elif(curr_capacity_left_per < 0.2):
-        b = 2
-    else:
-        c = 4
+        signal_consumers_to_increase()
+        check_and_reward_consumers(consumer_readings, "reduced")
+    
