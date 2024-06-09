@@ -110,7 +110,79 @@ for hour in range(24):
     for sensor in [solar_sensor, wind_sensor, grid_sensor, battery_sensor] + consumer_sensors:
         collect_data(sensor, current_time)
 # Print data from the in-memory database
+initial_consumption = {}
+consumers_reducing = False
+consumers_increasing = False
+
+def signal_consumers_to_reduce(): #TODO figure out the thresholds for it - grid sensor as well as energy production(wind+solar)?
+    global consumers_reducing, initial_consumption
+    consumers_reducing = True
+    print("Energy usage level on the grid is high. Consumers are advised to reduce their power consumption to maintain grid stability.")
+    store_initial_consumption()
+    
+def signal_consumers_to_increase(): #TODO figure out the thresholds for it - grid sensor as well as energy production(wind+solar)?
+    global consumers_increasing, initial_consumption
+    consumers_increasing = True
+    print("A lot of unused energy available in the grid. Consumers are advised to utilise this power to maintain grid stability.")
+    store_initial_consumption()
         
+def store_initial_consumption(time, num_consumers=5): #change the 5 val when you get data from more customers
+    # Dictionary to store initial consumption data for each consumer
+    global initial_consumption
+    initial_consumption = {}
+
+    for i in range(num_consumers):
+        # Extract data for each consumer
+        timestamps, values = extract_data(f"consumer_meter_{i}")
+        
+        # Filter the data to include only entries from the specified start_time
+        filtered_data = [(ts, val) for ts, val in zip(timestamps, values) if ts >= time]
+        
+        if filtered_data:
+            filtered_timestamps, filtered_values = zip(*filtered_data)
+            # Store the filtered data in the dictionary
+            initial_consumption[f"consumer_{i}"] = {
+                'timestamps': list(filtered_timestamps),
+                'values': list(filtered_values)
+            }
+        else:
+            # If no data points meet the criteria, store empty lists
+            initial_consumption[f"consumer_{i}"] = {
+                'timestamps': [],
+                'values': []
+            }
+
+        
+def check_and_reward_consumers(actionName, time, num_consumers=5):
+    # for reading in consumer_readings:
+    #     initial_value = initial_consumption[reading['sensor'].name]
+    #     if actionName == "reduced":
+    #         if initial_value * 0.8 <= reading['value'] < initial_value:  # Check if consumption reduced by max 20%
+    #         # Trigger payment to consumer's wallet
+    #             send_payment(10)  # Adjust amount and address accordingly
+    #             print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
+    #         elif initial_value * 0.1 <= reading['value'] < initial_value * 0.8:
+    #             reduct_per = reading['value']/initial_value 
+    #             send_payment(1 / reduct_per * max_token_reward)  # Adjust amount and address accordingly
+    #             print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
+    #     elif actionName == "increased":
+    #         if initial_value * 1.5 <= reading['value'] < initial_value * 1.8:  # Check if consumption increased by 50-79%
+    #         # Trigger payment to consumer's wallet
+    #             reduct_per = reading['value']/initial_value 
+    #             send_payment(reduct_per * max_token_reward)  # Adjust amount and address accordingly
+    #             print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
+    #         elif initial_value * 1.8 <= reading['value']: # Check if consumption increased by 80%+
+    #             send_payment(10)  # Adjust amount and address accordingly
+    #             print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
+    for i in range(5):
+        # Extract data for each consumer
+        timestamps, values = extract_data(f"consumer_meter_{i}")
+        if actionName == "reduced":
+            return 0
+            
+            
+
+
 def extract_data(sensor_name):
     timestamps = []
     values = []
@@ -151,7 +223,7 @@ def plot_sensor_data():
     plt.grid(True)
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show()
+    #plt.show()
 
 plot_sensor_data()
 
