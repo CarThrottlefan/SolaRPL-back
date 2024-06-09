@@ -4,6 +4,7 @@ from timely_beliefs import TimedBelief
 from datetime import timedelta
 import pytz
 import matplotlib.pyplot as plt 
+import ripplenet
 
 # In-memory data storage
 class InMemoryDB:
@@ -46,6 +47,8 @@ wind_type = GenericAssetType(name="wind_turbine", description="Wind Turbine")
 grid_type = GenericAssetType(name="grid", description="Electric Grid")
 battery_type = GenericAssetType(name="battery_storage", description="Battery Storage")
 consumer_type = GenericAssetType(name="consumer_meter", description="Consumer Meter")
+
+max_token_reward = 30
 
 db.generic_asset_types.extend([solar_type, wind_type, grid_type, battery_type, consumer_type])
 
@@ -114,17 +117,17 @@ initial_consumption = {}
 consumers_reducing = False
 consumers_increasing = False
 
-def signal_consumers_to_reduce(): #TODO figure out the thresholds for it - grid sensor as well as energy production(wind+solar)?
+def signal_consumers_to_reduce(curr_time): #TODO figure out the thresholds for it - grid sensor as well as energy production(wind+solar)?
     global consumers_reducing, initial_consumption
     consumers_reducing = True
     print("Energy usage level on the grid is high. Consumers are advised to reduce their power consumption to maintain grid stability.")
-    store_initial_consumption()
+    store_initial_consumption(curr_time)
     
-def signal_consumers_to_increase(): #TODO figure out the thresholds for it - grid sensor as well as energy production(wind+solar)?
+def signal_consumers_to_increase(curr_time): #TODO figure out the thresholds for it - grid sensor as well as energy production(wind+solar)?
     global consumers_increasing, initial_consumption
     consumers_increasing = True
     print("A lot of unused energy available in the grid. Consumers are advised to utilise this power to maintain grid stability.")
-    store_initial_consumption()
+    store_initial_consumption(curr_time)
         
 def store_initial_consumption(time, num_consumers=5): #change the 5 val when you get data from more customers
     # Dictionary to store initial consumption data for each consumer
@@ -175,14 +178,22 @@ def check_and_reward_consumers(actionName, curr_time, num_consumers=5):
     #             send_payment(10)  # Adjust amount and address accordingly
     #             print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
     for i in range(5):
+        for consumer,data in initial_consumption.items():
+            initial_val = data['values']
         # Extract data for each consumer
-        timestamps, values = extract_data(f"consumer_meter_{i}")
-        filtered_data = [(ts, val) for ts, val in zip(timestamps, values) if ts == curr_time]
-        og_time = initial_consumption
-        if actionName == "reduced":
-            return 0
-        else:
-            return 0
+            timestamps, values = extract_data(f"consumer_meter_{i}")
+            filtered_data = [(ts, val) for ts, val in zip(timestamps, values) if ts == curr_time]
+            if actionName == "reduced":
+                if initial_val[i] * 0.8 <= filtered_data[i][1] < initial_val[i]:  # Check if consumption reduced by max 20%
+                    ripplenet.send_payment(10)  # Adjust amount and address accordingly
+                    #print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
+                elif initial_val[i] * 0.1 <= filtered_data[i][1] < initial_val[i] * 0.8:
+                    reduct_per = filtered_data[i][1]/initial_val
+                    ripplenet.send_payment(1 / reduct_per * max_token_reward)  # Adjust amount and address accordingly
+                    #print(f"Reward sent to {reading['sensor'].name} for reducing consumption.")
+                return 0
+            else:
+                return 0
   
 def check_grid_usage(curr_time):
     timestamps, values = extract_data("wind_turbine_sensor")
@@ -199,13 +210,13 @@ def check_grid_usage(curr_time):
         filtered_data3 = [(ts, val) for ts, val in zip(timestamps, values) if ts == curr_time]
         
     total_generation = filtered_data1[0][1] + filtered_data2[0][1]
-    total_consumption = sum(map(lambda x: x[0], filtered_data3))
-    curr_capacity_left_per = lambda: total_consumption / total_generation
+    total_consumption = sum(map(lambda x: x[1], filtered_data3))
+    curr_capacity_left_per = total_consumption / total_generation
     if(curr_capacity_left_per > 1): 
-        signal_consumers_to_increase()
+        signal_consumers_to_increase(curr_time)
         check_and_reward_consumers("increased", curr_time)
     elif(curr_capacity_left_per < 0.2):
-        signal_consumers_to_reduce()
+        signal_consumers_to_reduce(curr_time)
         check_and_reward_consumers("reduced", curr_time)          
             
 
@@ -276,4 +287,4 @@ def print_data():
     for belief in db.beliefs:
         print(f"Sensor: {belief.sensor.name}, Value: {belief.event_value}, Timestamp: {belief.event_start}, Source: {belief.source.name}")
 
-print_data()
+#print_data()

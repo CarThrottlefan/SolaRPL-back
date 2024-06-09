@@ -4,7 +4,15 @@ from xrpl.clients import JsonRpcClient
 from xrpl.models.requests import AccountInfo
 import time
 from xrpl.models.transactions import Payment
-from xrpl.transaction import submit_and_wait, submit
+from xrpl.transaction import submit_and_wait
+import flask
+from flask import *
+
+app = flask.Flask(__name__)
+app.config["DEBUG"] = True
+
+
+
 
 #completely unrelated to other scripts, therefore double functions
 def generate_wallet():

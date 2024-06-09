@@ -4,11 +4,7 @@ from xrpl.clients import JsonRpcClient
 import time
 from xrpl.models.transactions import Payment
 from xrpl.transaction import submit_and_wait
-from main import get_consumer, get_owner
 from flask import *
-from xrpl.clients import JsonRpcClient
-from main import get_consumer
-import time
 
 client = JsonRpcClient("https://s.altnet.rippletest.net:51234/")
 
@@ -31,6 +27,7 @@ def generate_wallet(wallet_owner):
     return wallet
 
 def send_payment(amount):
+    from main import get_consumer, get_owner  # Moved inside the function
     owner = get_owner()
     consumer = get_consumer()
     payment_tx = create_payment_transaction(owner.wallet, consumer.wallet.classic_address, amount)
