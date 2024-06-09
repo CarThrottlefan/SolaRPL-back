@@ -100,7 +100,7 @@ def collect_data(sensor, now):
     elif "battery_storage" in sensor.name:
         value = 50
     else:
-        value = np.random.uniform(1, 10)  # Placeholder for consumer meters or other types of sensors
+        value = np.random.uniform(1, 10) # Placeholder for consumer meters or other types of sensors
     add_reading(sensor, value, now)
     return {"sensor": sensor, "datetime": now, "value": value}
 
@@ -136,7 +136,7 @@ def store_initial_consumption(time, num_consumers=5): #change the 5 val when you
         timestamps, values = extract_data(f"consumer_meter_{i}")
         
         # Filter the data to include only entries from the specified start_time
-        filtered_data = [(ts, val) for ts, val in zip(timestamps, values) if ts >= time]
+        filtered_data = [(ts, val) for ts, val in zip(timestamps, values) if ts == time]
         
         if filtered_data:
             filtered_timestamps, filtered_values = zip(*filtered_data)
@@ -153,7 +153,7 @@ def store_initial_consumption(time, num_consumers=5): #change the 5 val when you
             }
 
         
-def check_and_reward_consumers(actionName, time, num_consumers=5):
+def check_and_reward_consumers(actionName, curr_time, num_consumers=5):
     # for reading in consumer_readings:
     #     initial_value = initial_consumption[reading['sensor'].name]
     #     if actionName == "reduced":
@@ -177,9 +177,36 @@ def check_and_reward_consumers(actionName, time, num_consumers=5):
     for i in range(5):
         # Extract data for each consumer
         timestamps, values = extract_data(f"consumer_meter_{i}")
+        filtered_data = [(ts, val) for ts, val in zip(timestamps, values) if ts == curr_time]
+        og_time = initial_consumption
         if actionName == "reduced":
             return 0
-            
+        else:
+            return 0
+  
+def check_grid_usage(curr_time):
+    timestamps, values = extract_data("wind_turbine_sensor")
+    filtered_data1 = [(ts, val) for ts, val in zip(timestamps, values) if ts == curr_time]
+    
+    timestamps, values = extract_data("solar_panel_sensor")
+    filtered_data2 = [(ts, val) for ts, val in zip(timestamps, values) if ts == curr_time]
+    
+    for i in range(5):
+        # Extract data for each consumer
+        timestamps, values = extract_data(f"consumer_meter_{i}")
+        
+        # Filter the data to include only entries from the specxified start_time
+        filtered_data3 = [(ts, val) for ts, val in zip(timestamps, values) if ts == curr_time]
+        
+    total_generation = filtered_data1[0][1] + filtered_data2[0][1]
+    total_consumption = sum(map(lambda x: x[0], filtered_data3))
+    curr_capacity_left_per = lambda: total_consumption / total_generation
+    if(curr_capacity_left_per > 1): 
+        signal_consumers_to_increase()
+        check_and_reward_consumers("increased", curr_time)
+    elif(curr_capacity_left_per < 0.2):
+        signal_consumers_to_reduce()
+        check_and_reward_consumers("reduced", curr_time)          
             
 
 

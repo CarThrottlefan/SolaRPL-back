@@ -1,11 +1,33 @@
 import requests
 import xrpl.wallet
 from xrpl.clients import JsonRpcClient
-from xrpl.models.requests import AccountInfo
 import time
 from xrpl.models.transactions import Payment
-from xrpl.transaction import submit, submit_and_wait
+from xrpl.transaction import submit_and_wait
 from main import get_consumer, get_owner
+import flask
+from flask import *
+from xrpl.clients import JsonRpcClient
+from xrpl.models.requests import AccountInfo
+from main import get_consumer
+import time
+
+app = flask.Flask(__name__)
+app.config["DEBUG"] = True
+
+client = JsonRpcClient("https://s.altnet.rippletest.net:51234/")
+
+@app.route('/wallet_balance')
+def check_account_balance():
+    time.sleep(30)
+    consumer = get_consumer()
+    account_info = AccountInfo(
+        account=consumer.classic_address,
+        ledger_index="validated",
+        strict=True
+    )
+    response = client.request(account_info)
+    return response.json
 
 class Consumer:
     def __init__(self):
@@ -14,8 +36,6 @@ class Consumer:
 class Owner:
     def __init__(self):
         self.wallet = generate_wallet("owner")
-
-client = JsonRpcClient("https://s.altnet.rippletest.net:51234/")
 
 def generate_wallet(wallet_owner):
     wallet = xrpl.wallet.Wallet.create()
@@ -30,8 +50,7 @@ def send_payment(amount):
     owner = get_owner()
     consumer = get_consumer()
     payment_tx = create_payment_transaction(owner.wallet, consumer.wallet.classic_address, amount)
-    signed_tx = submit_and_wait(payment_tx, client, owner.wallet)
-    response = submit(signed_tx, client)
+    response = submit_and_wait(payment_tx, client, owner.wallet)
     if response.status_code == 200:
         print(f"Successfully sent transaction: {consumer.wallet.classic_address}")
         return response.json()
@@ -56,12 +75,3 @@ def fund_wallet(wallet):
     else:
         print(f"Failed to fund wallet: {wallet.classic_address}")
         return None
-
-def check_account_balance(wallet):
-    account_info = AccountInfo(
-        account=wallet.classic_address,
-        ledger_index="validated",
-        strict=True
-    )
-    response = client.request(account_info)
-    return response.result

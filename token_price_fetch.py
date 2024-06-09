@@ -1,5 +1,6 @@
 # Python program to get the real-time currency exchange rate - courtesy of GeeksForGeeks(https://www.geeksforgeeks.org/python-get-the-real-time-currency-exchange-rate/)
 
+from alpha_vantage.foreignexchange import ForeignExchange
 # Function to get real time currency exchange 
 def RealTimeCurrencyExchangeRate(from_currency, to_currency, api_key) : 
 
